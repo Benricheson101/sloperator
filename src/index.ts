@@ -1,10 +1,10 @@
 import {clearInterval, setInterval} from 'node:timers';
 
-import {ChannelType, type TextChannel} from 'discord.js';
+import {ChannelType, cleanContent, type TextChannel} from 'discord.js';
 
 import {AIService} from './ai';
 import {DiscordClient} from './client';
-import {loadConfig} from './config';
+import {isGuildEnabled, loadConfig} from './config';
 import {ConversationManager} from './convo';
 
 const config = loadConfig('./config.toml');
@@ -12,33 +12,61 @@ const discord = new DiscordClient();
 const cm = new ConversationManager();
 const ai = new AIService();
 
+// const isBotMentioned = (content: string) =>
+//   content.startsWith(`<@!${discord.user!.id}>`) ||
+//   content.startsWith(`<@${discord.user!.id}>`);
+
+let BOT_PING_REGEX: RegExp;
+
+const isBotMentioned = (content: string) => BOT_PING_REGEX.test(content);
+
 discord.on('clientReady', () => {
   console.log(`Logged in as ${discord.user?.tag}`);
+  BOT_PING_REGEX = new RegExp(`<@!?${discord.user!.id}>`, 'g');
 });
 
-// discord.on('interactionCreate', i => {});
+discord.on('threadCreate', async thread => {
+  if (!thread.guildId || !isGuildEnabled(thread.guildId)) {
+    return;
+  }
+
+  const startingMessage = await thread.fetchStarterMessage();
+  if (!startingMessage) {
+    return;
+  }
+
+  const isParentInConvo = cm.messages.has(startingMessage.id);
+  if (isParentInConvo) {
+    cm.attachThread(thread.id, startingMessage.id);
+  }
+});
 
 discord.on('messageCreate', async msg => {
   if (!msg.guild || msg.channel.type === ChannelType.DM || msg.author.bot) {
     return;
   }
 
-  if (msg.guildId !== '579466138992508928') {
+  if (!msg.guildId || !isGuildEnabled(msg.guildId)) {
     return;
   }
 
-  const isPing =
-    msg.content.startsWith(`<@!${discord.user!.id}>`) ||
-    msg.content.startsWith(`<@${discord.user!.id}>`);
-  const isInConvo =
+  const isPing = isBotMentioned(msg.content);
+  const isReply =
     !!msg.reference?.messageId && cm.messages.has(msg.reference.messageId);
-  if (!isPing && !isInConvo) {
+
+  const threadId = msg.channel.isThread() ? msg.channel.id : undefined;
+  const isInAttachedThread = threadId && cm.isThreadAttached(threadId);
+  const isFirstInThread = msg.position === 0;
+
+  if (!isPing && !isReply && !isInAttachedThread) {
     return;
   }
 
-  const content = isPing
-    ? msg.content.replace(/^<@!?\d{18,20}>\s*/, '')
-    : msg.content;
+  if (isPing && isFirstInThread) {
+    cm.attachThread(threadId!, msg.id);
+  }
+
+  const content = cleanContent(msg.content.replaceAll(BOT_PING_REGEX, ''), msg.channel).trim();
   if (!content) {
     return;
   }
@@ -51,11 +79,20 @@ discord.on('messageCreate', async msg => {
       author: msg.author.username,
       authorID: msg.author.id,
       role: 'user',
-      threadID: msg.channel.isThread() ? msg.channel.id : undefined,
+      threadID: threadId,
       startOfThread: isPing && !msg.reference,
     });
   }
-  const convo = cm.getConversation(msg.id);
+
+  let convo: ReturnType<typeof cm.getConversation>;
+  if (isInAttachedThread) {
+    const rootMsgId = cm.getThreadRoot(threadId!);
+    const parentConvo = rootMsgId ? cm.getConversation(rootMsgId) : [];
+    const threadMsgs = cm.getThreadMessages(threadId!);
+    convo = [...parentConvo, ...threadMsgs];
+  } else {
+    convo = cm.getConversation(msg.id);
+  }
 
   msg.channel.sendTyping();
   const typingInterval = setInterval(
@@ -68,8 +105,8 @@ discord.on('messageCreate', async msg => {
     context: {
       botUsername: discord.user!.username,
       serverName: msg.guild!.name,
-      channelName: msg.channel.name,
-      channelDescription: (msg.channel as TextChannel).topic || '',
+      channelName: msg.channel.parent?.name || msg.channel.name,
+      channelDescription: (msg.channel as TextChannel).topic || '<none>',
     },
   });
 

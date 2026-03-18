@@ -16,6 +16,7 @@ export type OpenAIConfig = {
 
 export type DiscordConfig = {
   token: string;
+  enabled_guilds: string[];
 };
 
 export type Config = {
@@ -42,5 +43,12 @@ export const loadConfig = (path = 'config.toml') => {
     config.model.max_history = 30;
   }
 
+  if (!config.discord.enabled_guilds) {
+    config.discord.enabled_guilds = [];
+  }
+
   return config;
 };
+
+export const isGuildEnabled = (g: string) =>
+  config.discord.enabled_guilds.length ? config.discord.enabled_guilds.includes(g) : true;

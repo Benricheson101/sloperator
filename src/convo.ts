@@ -13,9 +13,34 @@ export type ConversationMessage = {
 
 export class ConversationManager {
   messages = new Map<string, ConversationMessage>();
+  attachedThreads = new Map<string, string>();
 
   addMessage(msg: ConversationMessage) {
     this.messages.set(msg.messageID, msg);
+  }
+
+  attachThread(threadId: string, rootMessageId: string) {
+    this.attachedThreads.set(threadId, rootMessageId);
+  }
+
+  isThreadAttached(threadId: string) {
+    return this.attachedThreads.has(threadId);
+  }
+
+  getThreadRoot(threadId: string) {
+    return this.attachedThreads.get(threadId);
+  }
+
+  getThreadMessages(threadId: string) {
+    const messages: ConversationMessage[] = [];
+    for (const msg of this.messages.values()) {
+      if (msg.threadID === threadId) {
+        messages.push(msg);
+      }
+    }
+    return messages.sort((a, b) =>
+      Number(BigInt(a.messageID) - BigInt(b.messageID))
+    );
   }
 
   getConversation(leaf: string) {

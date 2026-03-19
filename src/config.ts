@@ -7,6 +7,7 @@ export type ModelConfig = {
   name: string;
   max_history?: number;
   max_output?: number;
+  small_model?: string;
 };
 
 export type ProviderConfig = {
@@ -52,4 +53,6 @@ export const loadConfig = (path = 'config.toml') => {
 };
 
 export const isGuildEnabled = (g: string) =>
-  config.discord.enabled_guilds.length ? config.discord.enabled_guilds.includes(g) : true;
+  config.discord.enabled_guilds.length
+    ? config.discord.enabled_guilds.includes(g)
+    : true;

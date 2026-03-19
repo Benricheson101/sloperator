@@ -6,6 +6,7 @@ import {AIService} from './ai';
 import {DiscordClient} from './client';
 import {isGuildEnabled, loadConfig} from './config';
 import {ConversationManager} from './convo';
+import {sendMessage} from './util/message';
 
 const config = loadConfig('./config.toml');
 const discord = new DiscordClient();
@@ -37,7 +38,6 @@ discord.on('threadCreate', async thread => {
 
   const isParentInConvo = cm.messages.has(startingMessage.id);
   if (isParentInConvo) {
-    console.log('isParentInConvo');
     cm.attachThread(thread.id, startingMessage.id);
   }
 });
@@ -53,7 +53,9 @@ discord.on('messageCreate', async msg => {
 
   const isPing = isBotMentioned(msg.content);
   const isReply =
-    !!msg.reference?.messageId && cm.messages.has(msg.reference.messageId);
+    !!msg.reference?.messageId &&
+    cm.messages.has(msg.reference.messageId) &&
+    cm.messages.get(msg.reference.messageId)!.authorID === discord.user!.id;
 
   const threadId = msg.channel.isThread() ? msg.channel.id : undefined;
   const isInAttachedThread = threadId && cm.isThreadAttached(threadId);
@@ -64,11 +66,13 @@ discord.on('messageCreate', async msg => {
   }
 
   if (isPing && isFirstInThread) {
-    console.log('isPing and isFirst');
     cm.attachThread(threadId!, msg.id);
   }
 
-  const content = cleanContent(msg.content.replaceAll(BOT_PING_REGEX, ''), msg.channel).trim();
+  const content = cleanContent(
+    msg.content.replaceAll(BOT_PING_REGEX, ''),
+    msg.channel
+  ).trim();
   if (!content) {
     return;
   }
@@ -83,6 +87,12 @@ discord.on('messageCreate', async msg => {
       role: 'user',
       threadID: threadId,
       startOfThread: isPing && !msg.reference,
+      images: [
+        ...msg.attachments
+          .filter(a => a.contentType?.startsWith('image'))
+          .mapValues(v => v.url)
+          .values(),
+      ],
     });
   }
 
@@ -113,23 +123,40 @@ discord.on('messageCreate', async msg => {
       },
     });
 
-    console.log(response.usage);
+    const channel = msg.channel;
+    const isThreadChannel =
+      channel.type === ChannelType.PrivateThread ||
+      channel.type === ChannelType.PublicThread;
 
-    const sent = await msg.reply({
-      content: response.text,
-      allowedMentions: {},
-    });
+    // let threadTitle: string | undefined;
+    // if (!isThreadChannel) {
+    //   threadTitle = await ai.generateTitle(convo);
+    // }
 
-    cm.addMessage({
-      content: response.text,
-      author: sent.author.username,
-      authorID: sent.author.id,
-      messageID: sent.id,
-      role: 'assistant',
-      startOfThread: false,
-      parent: msg.id,
-      threadID: msg.channel.isThread() ? msg.channel.id : undefined,
-    });
+    const {messages: sentMessages} = await sendMessage(
+      ai,
+      convo,
+      isThreadChannel ? channel : (channel as TextChannel),
+      response.text,
+      isThreadChannel ? undefined : {replyTo: msg}
+    );
+
+    const responseThreadId = channel.isThread() ? channel.id : undefined;
+    let parentId = msg.id;
+
+    for (const sent of sentMessages) {
+      cm.addMessage({
+        content: sent.content || '',
+        author: sent.author.username,
+        authorID: sent.author.id,
+        messageID: sent.id,
+        role: 'assistant',
+        startOfThread: false,
+        parent: parentId,
+        threadID: responseThreadId,
+      });
+      parentId = sent.id;
+    }
   } catch (err) {
     console.error(err);
     msg.channel.send(':x: An error occurred.');

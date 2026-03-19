@@ -1,10 +1,9 @@
-import {generateText, stepCountIs} from 'ai';
+import {createOpenRouter} from '@openrouter/ai-sdk-provider';
+import {generateText, type ModelMessage, stepCountIs} from 'ai';
 import {createOllama} from 'ai-sdk-ollama';
 
 import {config} from './config';
-import type {ConversationMessage} from './convo';
 import {webSearch} from './tools/webSearch';
-import { createOpenRouter } from '@openrouter/ai-sdk-provider';
 
 export type Role = 'user' | 'assistant' | 'system';
 
@@ -19,7 +18,7 @@ export class AIService {
   constructor() {
     this.openrouter = createOpenRouter({
       apiKey: config.provider.api_key,
-    })
+    });
 
     this.ollama = createOllama({
       baseURL: config.provider.base_url,
@@ -32,18 +31,14 @@ export class AIService {
     messages,
     context,
   }: {
-    messages: ConversationMessage[];
+    messages: ModelMessage[];
     context: {
       botUsername: string;
       serverName: string;
       channelName: string;
       channelDescription: string;
     };
-    }) {
-  // }): Promise<{
-  //   text: string;
-  //   toolCalls?: {name: string; input: unknown}[];
-  // }> {
+  }) {
     const modelName = config.model.name;
 
     const systemPrompt = this.systemPrompt
@@ -64,12 +59,12 @@ export class AIService {
       stopWhen: stepCountIs(3),
     });
 
+    console.dir(result.usage, {depth: null});
+
     const toolCalls = result.toolCalls?.map(call => ({
       name: call.toolName,
       input: call.input,
     }));
-
-    console.dir(result, {depth: null});
 
     return {
       text: result.text || 'Failed :(',
@@ -77,8 +72,36 @@ export class AIService {
       usage: {
         outputTokens: result.totalUsage.outputTokens,
         inputTokens: result.totalUsage.inputTokens,
-        cost: result.steps.map(s => 'cost' in s.usage && typeof s.usage.cost === 'number' ? s.usage.cost : 0).reduce((a, c) => a + c, 0),
-      }
+        cost: result.steps
+          .map(s =>
+            'cost' in s.usage && typeof s.usage.cost === 'number'
+              ? s.usage.cost
+              : 0
+          )
+          .reduce((a, c) => a + c, 0),
+      },
     };
+  }
+
+  async generateTitle(messages: ModelMessage[]): Promise<string> {
+    const modelName = config.model.small_model || config.model.name;
+
+    const titlePrompt = `Generate a short, descriptive title for this conversation. Max 100 characters. No quotes. Just the title.`;
+
+    const result = await generateText({
+      model: (this.isLocal ? this.ollama : this.openrouter)(modelName, {}),
+      system: titlePrompt,
+      messages: messages.slice(-10),
+      maxOutputTokens: 20,
+      providerOptions: {
+        openrouter: {
+          reasoning: {
+            enabled: false,
+          },
+        },
+      },
+    });
+
+    return result.text.slice(0, 100).trim() || 'AI Response';
   }
 }

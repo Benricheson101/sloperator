@@ -1,3 +1,5 @@
+import type {ModelMessage, UserModelMessage} from 'ai';
+
 import type {Role} from './ai';
 
 export type ConversationMessage = {
@@ -9,6 +11,7 @@ export type ConversationMessage = {
   threadID?: string;
   parent?: string;
   startOfThread: boolean;
+  images?: string[];
 };
 
 export class ConversationManager {
@@ -43,13 +46,24 @@ export class ConversationManager {
     );
   }
 
-  getConversation(leaf: string) {
-    const messages: ConversationMessage[] = [];
+  getConversation(leaf: string): ModelMessage[] {
+    const messages: ModelMessage[] = [];
 
     let parentID: string | undefined = leaf;
     while (parentID && this.messages.has(parentID)) {
       const msg: ConversationMessage = this.messages.get(parentID)!;
       messages.push(msg);
+
+      if (msg.images?.length) {
+        messages.push(<UserModelMessage>{
+          role: msg.role,
+          content: msg.images!.map(i => ({
+            type: 'image',
+            image: new URL(i),
+          })),
+        });
+      }
+
       parentID = msg.parent;
     }
 

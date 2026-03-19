@@ -1,10 +1,15 @@
 import {createOpenRouter} from '@openrouter/ai-sdk-provider';
-import {generateText, type ModelMessage, stepCountIs, SystemModelMessage} from 'ai';
+import {
+  generateText,
+  type ModelMessage,
+  type SystemModelMessage,
+  stepCountIs,
+} from 'ai';
 import {createOllama} from 'ai-sdk-ollama';
 
 import {config} from './config';
-import {webSearch} from './tools/webSearch';
 import {currentTime} from './tools/time';
+import {webSearch} from './tools/webSearch';
 
 export type Role = 'user' | 'assistant' | 'system';
 
@@ -64,7 +69,7 @@ export class AIService {
         `- Channel description: ${context.channelDescription}`,
         `- Model: ${modelName}`,
       ].join('\n'),
-    }
+    };
 
     const result = await generateText({
       model: (this.isLocal ? this.ollama : this.openrouter)(modelName, {}),
@@ -83,6 +88,7 @@ export class AIService {
     }));
 
     if (!result.text) {
+      console.error('No text');
       throw new Error('No text', {cause: result});
     }
 

@@ -2,8 +2,7 @@ import {tool} from 'ai';
 import {z} from 'zod';
 
 export const currentTime = tool({
-  description:
-    'Get the current time and date in a timezone (default UTC)',
+  description: 'Get the current time and date in a timezone (default UTC)',
   inputSchema: z.object({
     timezone: z
       .string()

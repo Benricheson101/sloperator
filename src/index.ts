@@ -54,6 +54,8 @@ discord.on('messageCreate', async msg => {
   const isPing = isBotMentioned(msg.content);
   const isReply =
     !!msg.reference?.messageId &&
+    msg.mentions.repliedUser &&
+    msg.mentions.has(msg.mentions.repliedUser) &&
     cm.messages.has(msg.reference.messageId) &&
     cm.messages.get(msg.reference.messageId)!.authorID === discord.user!.id;
 
@@ -123,6 +125,10 @@ discord.on('messageCreate', async msg => {
       },
     });
 
+    if (!response.text) {
+      console.error('no text????');
+    }
+
     const channel = msg.channel;
     const isThreadChannel =
       channel.type === ChannelType.PrivateThread ||
@@ -138,7 +144,7 @@ discord.on('messageCreate', async msg => {
       convo,
       channel: isThreadChannel ? channel : (channel as TextChannel),
       response: response.text,
-      replyTo: isThreadChannel ? msg : undefined,
+      replyTo: !isThreadChannel ? msg : undefined,
       usage: response.usage,
     });
 

@@ -244,6 +244,11 @@ export const sendMessage = async ({
       msg = await targetChannel.send(msgOptions);
     }
 
+    // HACK: it adds this to the Conversation so we have to take out the token stats line
+    if (isLast) {
+      msg.content = messagesToSend[i];
+    }
+
     messages.push(msg);
     if (msg.attachments.size > 0) {
       attachments.push(...msg.attachments.values());

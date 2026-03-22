@@ -1,6 +1,8 @@
 import {tool} from 'ai';
 import {z} from 'zod';
 
+import {config} from '../config';
+
 export const webSearch = tool({
   description:
     'Search the web for current events, factual queries, or anything requiring up-to-date information',
@@ -11,7 +13,7 @@ export const webSearch = tool({
   async execute({query}) {
     const res: {results: {title: string; url: string; content: string}[]} =
       await fetch(
-        `http://localhost:8080/search?q=${encodeURIComponent(query)}&format=json`
+        `${config.searxng.url}/search?q=${encodeURIComponent(query)}&format=json`
       ).then(r => r.json());
 
     return (
@@ -20,6 +22,6 @@ export const webSearch = tool({
         url: r.url,
         snippet: r.content,
       })) ?? []
-    ).slice(0, 20);
+    ).slice(0, 10);
   },
 });

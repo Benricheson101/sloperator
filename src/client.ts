@@ -1,4 +1,4 @@
-import {Client, GatewayIntentBits} from 'discord.js';
+import {ActivityType, Client, GatewayIntentBits} from 'discord.js';
 
 export class DiscordClient extends Client {
   constructor() {
@@ -8,6 +8,15 @@ export class DiscordClient extends Client {
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.MessageContent,
       ],
+
+      presence: {
+        activities: [
+          {
+            type: ActivityType.Custom,
+            name: 'beep boop',
+          },
+        ],
+      },
     });
   }
 }

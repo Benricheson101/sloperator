@@ -21,10 +21,15 @@ export type DiscordConfig = {
   enabled_guilds: string[];
 };
 
+export type SearXNGConfig = {
+  url: string;
+};
+
 export type Config = {
   discord: DiscordConfig;
   provider: ProviderConfig;
   model: ModelConfig;
+  searxng: SearXNGConfig;
 };
 
 export let config: Config;

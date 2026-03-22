@@ -13,10 +13,6 @@ const discord = new DiscordClient();
 const cm = new ConversationManager();
 const ai = new AIService();
 
-// const isBotMentioned = (content: string) =>
-//   content.startsWith(`<@!${discord.user!.id}>`) ||
-//   content.startsWith(`<@${discord.user!.id}>`);
-
 let BOT_PING_REGEX: RegExp;
 
 const isBotMentioned = (content: string) => BOT_PING_REGEX.test(content);
@@ -94,7 +90,7 @@ discord.on('messageCreate', async msg => {
           .filter(a => a.contentType?.startsWith('image'))
           .mapValues(v => v.url)
           .values(),
-      ],
+      ].slice(0, 2),
     });
   }
 
@@ -133,11 +129,6 @@ discord.on('messageCreate', async msg => {
     const isThreadChannel =
       channel.type === ChannelType.PrivateThread ||
       channel.type === ChannelType.PublicThread;
-
-    // let threadTitle: string | undefined;
-    // if (!isThreadChannel) {
-    //   threadTitle = await ai.generateTitle(convo);
-    // }
 
     const {messages: sentMessages} = await sendMessage({
       ai,

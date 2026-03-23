@@ -91,14 +91,18 @@ export class AIService {
             role: m.role,
             content: [
               m.image_url &&
-                i >= a.length - 4 && {
+                i >= a.length - 8 && {
                   type: 'image',
                   image: new URL(m.image_url),
                 },
 
               m.content && {
                 type: 'text',
-                text: m.content,
+                // text: m.content,
+                text:
+                  m.role === 'user'
+                    ? `[Username: "${m.username || '<unknown>'}", Nickname: "${m.nickname || m.username || '<unknown>'}"]: ${m.content}`
+                    : m.content,
               },
             ].filter(Boolean),
           }

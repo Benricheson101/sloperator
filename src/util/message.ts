@@ -258,3 +258,9 @@ export const sendMessage = async ({
 
   return {messages, attachments};
 };
+
+export const getImage = (msg: Message) =>
+  msg.attachments
+    .filter(a => a.contentType?.startsWith('image'))
+    .mapValues(v => v.url)
+    .first() || null;

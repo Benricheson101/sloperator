@@ -1,6 +1,9 @@
 import {DatabaseSync, type StatementSync} from 'node:sqlite';
 
+import {cleanContent, type Message} from 'discord.js';
+
 import type {Role} from './ai';
+import {getImage} from './util/message';
 
 export type DBMessage = {
   id: bigint;
@@ -10,6 +13,8 @@ export type DBMessage = {
   parent: bigint | null;
   role: Role;
   image_url: string | null;
+  username: string | null;
+  nickname: string | null;
 };
 
 export class Database {
@@ -49,7 +54,9 @@ export class Database {
       msg.discord_guild_id,
       msg.parent,
       msg.role,
-      msg.image_url
+      msg.image_url,
+      msg.username,
+      msg.nickname
     );
   }
 
@@ -74,6 +81,33 @@ export class Database {
     return deleted;
   }
 
+  insertDiscordMessage(msg: Message) {
+    const content = cleanContent(
+      msg.content.replaceAll(
+        new RegExp(`<@!?${msg.client.user!.id}>`, 'g'),
+        ''
+      ),
+      msg.channel
+    ).trim();
+
+    this.insertMessage({
+      id: BigInt(msg.id),
+      // content: `[Username: "${msg.author.username}", Nickname: "${msg.member?.nickname || msg.author.displayName || msg.author.username}"]: ${content}`,
+      content,
+      discord_author_id: BigInt(msg.author.id),
+      discord_guild_id: BigInt(msg.guildId!),
+      parent: BigInt(msg.reference?.messageId || 0) || null,
+      role: 'user',
+      image_url: getImage(msg),
+      username: msg.author.username || null,
+      nickname:
+        msg.member?.nickname ||
+        msg.author.displayName ||
+        msg.author.username ||
+        null,
+    });
+  }
+
   initQueries() {
     this.queries = {
       insertMessage: this.db.prepare(`
@@ -84,9 +118,11 @@ export class Database {
           discord_guild_id,
           parent,
           role,
-          image_url
+          image_url,
+          username,
+          nickname
         )
-        values (?, ?, ?, ?, ?, ?, ?);
+        values (?, ?, ?, ?, ?, ?, ?, ?, ?);
       `),
 
       isInConvo: this.db.prepare(`
@@ -95,7 +131,6 @@ export class Database {
         where id = ?
       `),
 
-      // we have graph db at home
       getConversation: this.db.prepare(`
         with convo(id) as (
           select id

@@ -15,8 +15,6 @@ const db = new Database(config.sqlite.path);
 
 let BOT_PING_REGEX: RegExp;
 
-const isBotMentioned = (content: string) => BOT_PING_REGEX.test(content);
-
 discord.on('clientReady', () => {
   console.log(`Logged in as ${discord.user?.tag}`);
   BOT_PING_REGEX = new RegExp(`<@!?${discord.user!.id}>`, 'g');
@@ -31,60 +29,33 @@ discord.on('messageCreate', async msg => {
     return;
   }
 
-  const isPing = isBotMentioned(msg.content);
-  const isReply =
-    !!msg.reference?.messageId &&
-    msg.mentions.repliedUser &&
-    msg.mentions.has(msg.mentions.repliedUser) &&
-    db.isInConvo(BigInt(msg.reference.messageId)) &&
-    (await msg.fetchReference().then(r => r.author.id === discord.user!.id));
+  const isPing = msg.mentions.has(discord.user!.id);
+  const isReplyToBot = msg.mentions.repliedUser?.id === discord.user!.id;
+  const isReplyToOther = !!msg.reference?.messageId && !isReplyToBot;
 
-  if (!isPing && !isReply) {
+  if (!isPing && !isReplyToBot) {
     return;
+  }
+
+  if (
+    isPing &&
+    isReplyToOther &&
+    !db.isInConvo(BigInt(msg.reference!.messageId!))
+  ) {
+    const repliedMsg = await msg.fetchReference();
+    db.insertDiscordMessage(repliedMsg);
   }
 
   const content = cleanContent(
     msg.content.replaceAll(BOT_PING_REGEX, ''),
     msg.channel
   ).trim();
-  if (!content) {
+
+  if (!content && !isReplyToBot && !isReplyToOther) {
     return;
   }
 
-  if (msg.author.id !== discord.user!.id) {
-    // cm.addMessage({
-    //   content: `[Username: "${msg.author.username}", Nickname: "${msg.member?.nickname || msg.author.displayName || msg.author.username}"]: ${content}`,
-    //   messageID: msg.id,
-    //   parent: msg.reference?.messageId,
-    //   author: msg.author.username,
-    //   authorID: msg.author.id,
-    //   role: 'user',
-    //   threadID: threadId,
-    //   startOfThread: isPing && !msg.reference,
-    //   images: [
-    //     ...msg.attachments
-    //       .filter(a => a.contentType?.startsWith('image'))
-    //       .mapValues(v => v.url)
-    //       .values(),
-    //   ].slice(0, 2),
-    // });
-
-    const image =
-      msg.attachments
-        .filter(a => a.contentType?.startsWith('image'))
-        .mapValues(v => v.url)
-        .first() || null;
-
-    db.insertMessage({
-      id: BigInt(msg.id),
-      content: `[Username: "${msg.author.username}", Nickname: "${msg.member?.nickname || msg.author.displayName || msg.author.username}"]: ${content}`,
-      discord_author_id: BigInt(msg.author.id),
-      discord_guild_id: BigInt(msg.guildId),
-      parent: BigInt(msg.reference?.messageId || 0) || null,
-      role: 'user',
-      image_url: image,
-    });
-  }
+  db.insertDiscordMessage(msg);
 
   const convo = db.getConversation(BigInt(msg.id));
 
@@ -106,6 +77,8 @@ discord.on('messageCreate', async msg => {
     });
 
     // TODO: should reasoning text be saved for subsequent requests?
+
+    console.dir(response, {depth: null});
 
     if (!response.text) {
       console.error('no text????');
@@ -131,6 +104,12 @@ discord.on('messageCreate', async msg => {
         discord_guild_id: BigInt(sent.guildId!),
         parent: BigInt(parentId),
         image_url: null,
+        username: sent.author.username || null,
+        nickname:
+          sent.member?.nickname ||
+          sent.author.displayName ||
+          sent.author.username ||
+          null,
       });
       parentId = sent.id;
     }

@@ -7,7 +7,8 @@ CREATE TABLE messages (
   parent integer,
   role text not null check(role in ('user', 'assistant')),
   image_url text
-);
+, username text, nickname text);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
-  ('20260323154300');
+  ('20260323154300'),
+  ('20260323214639');

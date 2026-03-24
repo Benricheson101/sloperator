@@ -248,8 +248,8 @@ export const sendMessage = async ({
 
     // HACK: it adds this to the Conversation so we have to take out the token stats line
     if (isLast) {
-      // msg.content = messagesToSend[i];
-      msg.content = response;
+      msg.content = messagesToSend[i];
+      // msg.content = response;
     }
 
     messages.push(msg);

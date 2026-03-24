@@ -73,6 +73,7 @@ discord.on('messageCreate', async msg => {
         serverName: msg.guild!.name,
         channelName: msg.channel.parent?.name || msg.channel.name,
         channelDescription: (msg.channel as TextChannel).topic || '<none>',
+        member: msg.member!,
       },
     });
 
@@ -114,7 +115,8 @@ discord.on('messageCreate', async msg => {
       parentId = sent.id;
     }
   } catch (err) {
-    console.dir(err, {depth: null});
+    // console.dir(err, {depth: null});
+    console.error(err);
     msg.channel.send(':x: An error occurred.');
   } finally {
     clearInterval(typingInterval);
@@ -122,6 +124,7 @@ discord.on('messageCreate', async msg => {
 });
 
 discord.on('messageDelete', msg => {
+  // fixme: this doesn't seem to be working properly?
   db.deleteChildren(BigInt(msg.id));
 });
 

@@ -6,9 +6,11 @@ import {
   stepCountIs,
 } from 'ai';
 import {createOllama} from 'ai-sdk-ollama';
+import type {GuildMember} from 'discord.js';
 
 import {config} from './config';
 import type {DBMessage} from './db';
+import {discordMessageTools} from './tools/discordMessage';
 import {currentTime} from './tools/time';
 import {webSearch} from './tools/webSearch';
 
@@ -60,6 +62,7 @@ export class AIService {
       serverName: string;
       channelName: string;
       channelDescription: string;
+      member: GuildMember;
     };
   }) {
     const modelName = config.model.name;
@@ -99,7 +102,6 @@ export class AIService {
 
               m.content && {
                 type: 'text',
-                // text: m.content,
                 text:
                   m.role === 'user'
                     ? `[Username: "${m.username || '<unknown>'}", Nickname: "${m.nickname || m.username || '<unknown>'}"]: ${m.content}`
@@ -115,9 +117,14 @@ export class AIService {
       system: systemPrompt,
       messages: [contextPrompt, ...convo],
       maxOutputTokens: config.model.max_output,
-      tools: TOOLS,
+      tools: {
+        ...TOOLS,
+        ...discordMessageTools(context.member),
+      },
       stopWhen: stepCountIs(3),
     });
+
+    console.dir(result, {depth: null});
 
     const toolCalls = result.toolCalls?.map(call => ({
       name: call.toolName,

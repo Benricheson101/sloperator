@@ -35,6 +35,10 @@ export type RAGConfig = {
   embedding_model: string;
 };
 
+export type MiscConfig = {
+  debug_show_tokens: boolean;
+};
+
 export type Config = {
   discord: DiscordConfig;
   provider: ProviderConfig;
@@ -42,6 +46,7 @@ export type Config = {
   searxng: SearXNGConfig;
   sqlite: SQLiteConfig;
   rag: RAGConfig;
+  misc: MiscConfig;
 };
 
 export let config: Config;
@@ -68,6 +73,10 @@ export const loadConfig = (path = 'config.toml') => {
 
   if (!config.sqlite.path) {
     config.sqlite.path = ':memory:';
+  }
+
+  if (config.misc.debug_show_tokens === undefined) {
+    config.misc.debug_show_tokens = false;
   }
 
   return config;

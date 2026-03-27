@@ -11,6 +11,7 @@ import {
 } from 'discord.js';
 
 import type {AIService} from '../ai';
+import {config} from '../config';
 
 type ProseSegment = {text: string; isCode: boolean; codeIndex?: number};
 
@@ -228,8 +229,8 @@ export const sendMessage = async ({
 
     const msgContent =
       messagesToSend[i] +
-      (isLast
-        ? `\n\n-# input: ${usage.in} tokens (${usage.in - usage.cached} uncached, ${usage.cached} cached), output: ${usage.out}. cost: $${usage.cost}`
+      (isLast && config.misc.debug_show_tokens
+        ? `\n\n-# input: ${usage.in} tokens (${usage.in - usage.cached} uncached, ${usage.cached} cached), output: ${usage.out}. cost: $${usage.cost}. provider: ${usage.provider}`
         : '');
 
     const msgOptions: MessageCreateOptions = {

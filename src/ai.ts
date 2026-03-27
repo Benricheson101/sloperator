@@ -68,7 +68,19 @@ export class AIService {
       member: GuildMember;
       db: Database;
     };
-  }) {
+  }): Promise<{
+    text: string;
+    toolCalls: {name: string; input: unknown}[];
+    usage: {
+      provider: string;
+      in: number;
+      out: number;
+      reasoning: number;
+      cached: number;
+      total: number;
+      cost: number;
+    }
+  }> {
     const convo: ModelMessage[] = await Promise.all(
       messages.slice(-config.model.max_history!).map(
         async (m, i, a) =>
@@ -166,6 +178,9 @@ export class AIService {
       text: result.text || 'Failed :(',
       toolCalls,
       usage: {
+        provider: this.isLocal
+          ? 'ollama (local)'
+          : (result.providerMetadata?.openrouter?.provider as string || 'unknown'),
         in: result.totalUsage.inputTokens || 0,
         out: result.totalUsage.outputTokens || 0,
         reasoning: result.totalUsage.outputTokenDetails.reasoningTokens || 0,

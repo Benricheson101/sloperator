@@ -9,6 +9,7 @@ export type ModelConfig = {
   max_history?: number;
   max_output?: number;
   small_model?: string;
+  image_model?: string;
 };
 
 export type ProviderConfig = {
@@ -30,12 +31,17 @@ export type SQLiteConfig = {
   path: string;
 };
 
+export type RAGConfig = {
+  embedding_model: string;
+};
+
 export type Config = {
   discord: DiscordConfig;
   provider: ProviderConfig;
   model: ModelConfig;
   searxng: SearXNGConfig;
   sqlite: SQLiteConfig;
+  rag: RAGConfig;
 };
 
 export let config: Config;

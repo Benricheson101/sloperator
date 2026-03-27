@@ -1,5 +1,7 @@
 import {createOpenRouter} from '@openrouter/ai-sdk-provider';
 import {
+  embed,
+  embedMany,
   generateText,
   type ModelMessage,
   type SystemModelMessage,
@@ -9,8 +11,9 @@ import {createOllama} from 'ai-sdk-ollama';
 import type {GuildMember} from 'discord.js';
 
 import {config} from './config';
-import type {DBMessage} from './db';
+import type {Database, DBMessage} from './db';
 import {discordMessageTools} from './tools/discordMessage';
+import {ragTools} from './tools/rag';
 import {currentTime} from './tools/time';
 import {webSearch} from './tools/webSearch';
 
@@ -63,29 +66,9 @@ export class AIService {
       channelName: string;
       channelDescription: string;
       member: GuildMember;
+      db: Database;
     };
   }) {
-    const modelName = config.model.name;
-
-    const systemPrompt = this.systemPrompt
-      .replaceAll('{{BOT_USERNAME}}', context.botUsername)
-      .replaceAll('{{SERVER_NAME}}', context.serverName)
-      .replaceAll('{{CHANNEL_NAME}}', context.channelName)
-      .replaceAll('{{CHANNEL_DESCRIPTION}}', context.channelDescription)
-      .replaceAll('{{MODEL}}', modelName);
-
-    const contextPrompt: SystemModelMessage = {
-      role: 'system',
-      content: [
-        '## Environment Context',
-        `- Your username: ${context.botUsername}`,
-        `- Server name: ${context.serverName}`,
-        `- Channel name: ${context.channelName}`,
-        `- Channel description: ${context.channelDescription}`,
-        `- Model: ${modelName}`,
-      ].join('\n'),
-    };
-
     const convo: ModelMessage[] = await Promise.all(
       messages.slice(-config.model.max_history!).map(
         async (m, i, a) =>
@@ -112,6 +95,35 @@ export class AIService {
       )
     );
 
+    const hasImage = convo.some(
+      c => Array.isArray(c.content) && c.content.some(c => c.type === 'image')
+    );
+
+    const modelName =
+      hasImage && config.model.image_model
+        ? config.model.image_model
+        : config.model.name;
+
+    const systemPrompt = this.systemPrompt
+      .replaceAll('{{BOT_USERNAME}}', context.botUsername)
+      .replaceAll('{{SERVER_NAME}}', context.serverName)
+      .replaceAll('{{CHANNEL_NAME}}', context.channelName)
+      .replaceAll('{{CHANNEL_DESCRIPTION}}', context.channelDescription)
+      .replaceAll('{{MODEL}}', modelName);
+
+    const contextPrompt: SystemModelMessage = {
+      role: 'system',
+      content: [
+        '## Environment Context',
+        `- Your username: ${context.botUsername}`,
+        `- Server name: ${context.serverName}`,
+        `- Channel name: ${context.channelName}`,
+        `- Channel description: ${context.channelDescription}`,
+        `- Model: ${modelName}`,
+      ].join('\n'),
+    };
+
+    // TODO: add retry
     const result = await generateText({
       model: (this.isLocal ? this.ollama : this.openrouter)(modelName),
       system: systemPrompt,
@@ -120,8 +132,11 @@ export class AIService {
       tools: {
         ...TOOLS,
         ...discordMessageTools(context.member),
+        ...ragTools(context.member, context.db, this),
       },
-      stopWhen: stepCountIs(3),
+      stopWhen: stepCountIs(5),
+      temperature: 0.9,
+      topP: 0.93,
     });
 
     console.dir(result, {depth: null});
@@ -177,5 +192,29 @@ export class AIService {
       console.error('Failed to generate thread title:', err);
       return 'AI Response';
     }
+  }
+
+  async getEmbedding(query: string): Promise<number[]> {
+    const {embedding} = await embed({
+      model: (this.isLocal ? this.ollama : this.openrouter).embedding(
+        config.rag.embedding_model,
+        {}
+      ),
+      value: query,
+    });
+
+    return embedding;
+  }
+
+  async getManyEmbedding(queries: string[]): Promise<number[][]> {
+    const {embeddings} = await embedMany({
+      model: (this.isLocal ? this.ollama : this.openrouter).embedding(
+        config.rag.embedding_model,
+        {}
+      ),
+      values: queries,
+    });
+
+    return embeddings;
   }
 }

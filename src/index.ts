@@ -74,6 +74,7 @@ discord.on('messageCreate', async msg => {
         channelName: msg.channel.parent?.name || msg.channel.name,
         channelDescription: (msg.channel as TextChannel).topic || '<none>',
         member: msg.member!,
+        db,
       },
     });
 

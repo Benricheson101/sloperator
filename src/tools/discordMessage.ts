@@ -1,28 +1,19 @@
 import {tool} from 'ai';
-import {
-  type GuildMember,
-  type Message,
-  PermissionFlagsBits,
-} from 'discord.js';
+import {type GuildMember, type Message, PermissionFlagsBits} from 'discord.js';
 import {z} from 'zod';
 
-export const discordMessageTools = (
-  member: GuildMember
-) => ({
+export const discordMessageTools = (member: GuildMember) => ({
   fetch_discord_message: tool({
     description: 'Fetch a message from Discord in the current channel.',
     inputSchema: z.object({
       channelID: z
         .string()
-        .describe(
-          'The ID of the Discord channel the message is in'
-        ),
+        .describe('The ID of the Discord channel the message is in'),
       messsageID: z.string().describe('The ID of the Discord message to read'),
     }),
 
     async execute({channelID, messsageID: messageID}) {
-      const ch =
-          member.guild.channels.cache.get(channelID);
+      const ch = member.guild.channels.cache.get(channelID);
 
       if (!ch) {
         return {

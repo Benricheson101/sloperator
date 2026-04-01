@@ -1,4 +1,3 @@
-import type {ModelMessage} from 'ai';
 import {
   type Attachment,
   AttachmentBuilder,
@@ -10,7 +9,6 @@ import {
   type ThreadChannel,
 } from 'discord.js';
 
-import type {AIService} from '../ai';
 import {config} from '../config';
 
 type ProseSegment = {text: string; isCode: boolean; codeIndex?: number};
@@ -163,20 +161,16 @@ export type SendMessageResult = {
 };
 
 export const sendMessage = async ({
-  ai,
-  convo,
   channel,
   response,
   replyTo,
-  forceThread,
+  firstMsg,
   usage,
 }: {
-  ai: AIService;
-  convo: ModelMessage[];
   channel: TextChannel | NewsChannel | ThreadChannel;
   response: string;
   replyTo?: Message;
-  forceThread?: boolean;
+  firstMsg?: Message;
   usage: {
     in: number;
     out: number;
@@ -205,22 +199,6 @@ export const sendMessage = async ({
   const content = prose.map(p => p.text).join('');
   const messagesToSend = splitAtSentenceBoundary(content);
 
-  let thread: ThreadChannel | null = null;
-  let targetChannel: TextChannel | NewsChannel | ThreadChannel = channel;
-
-  if (messagesToSend.length >= 2 && !channel.isThread() && !forceThread) {
-    const textOrNewsChannel = channel as TextChannel | NewsChannel;
-    if ('threads' in textOrNewsChannel) {
-      const threadTitle = await ai.generateTitle(convo);
-
-      thread = await textOrNewsChannel.threads.create({
-        name: threadTitle || 'AI Response',
-        autoArchiveDuration: 60,
-      });
-      targetChannel = thread;
-    }
-  }
-
   const messages: Message[] = [];
   const attachments: Attachment[] = [];
 
@@ -242,10 +220,22 @@ export const sendMessage = async ({
     };
 
     let msg: Message;
-    if (i === 0 && replyTo && !thread) {
-      msg = await replyTo.reply(msgOptions);
+    if (i === 0 && replyTo) {
+      if (firstMsg) {
+        msg = await firstMsg.edit({
+          content: msgOptions.content,
+          flags: MessageFlags.SuppressEmbeds,
+          allowedMentions: {
+            parse: ['users'],
+            repliedUser: true,
+          },
+          ...(hasFiles ? {files} : {}),
+        });
+      } else {
+        msg = await replyTo.reply(msgOptions);
+      }
     } else {
-      msg = await targetChannel.send(msgOptions);
+      msg = await channel.send(msgOptions);
     }
 
     // HACK: it adds this to the Conversation so we have to take out the token stats line

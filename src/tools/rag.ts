@@ -32,11 +32,13 @@ export const ragTools = (member: GuildMember, db: Database, ai: AIService) => ({
       if (!result.length) {
         return "No relevant server rules or FAQs were found for this query. Answer using general knowledge, or tell the user you don't have server-specific info on this.";
       }
+      // `[Category: ${r.category.toUpperCase()}, Distance: ${r.distance.toFixed(4)}]\n${r.content}`
 
-      const results = result.map(
-        r =>
-          `[Category: ${r.category.toUpperCase()}, Distance: ${r.distance.toFixed(4)}]\n${r.content}`
-      );
+      const results = result.map(r => ({
+        category: r.category,
+        distance: r.distance.toFixed(4),
+        content: r.content,
+      }));
 
       return results;
     },

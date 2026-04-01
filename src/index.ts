@@ -1,6 +1,12 @@
 import {clearInterval, setInterval} from 'node:timers';
 
-import {ChannelType, cleanContent, type TextChannel} from 'discord.js';
+import {
+  ChannelType,
+  cleanContent,
+  type Message,
+  MessageFlags,
+  type TextChannel,
+} from 'discord.js';
 
 import {AIService} from './ai';
 import {DiscordClient} from './client';
@@ -66,7 +72,8 @@ discord.on('messageCreate', async msg => {
   );
 
   try {
-    const response = await ai.generateText({
+    let sent: Message | undefined;
+    const resp = ai.genText({
       messages: convo,
       context: {
         replyingToMsgID: msg.id,
@@ -79,21 +86,74 @@ discord.on('messageCreate', async msg => {
       },
     });
 
-    // TODO: should reasoning text be saved for subsequent requests?
+    let final: any;
+    let lastState: string | undefined;
+    loop: for await (const part of resp) {
+      let text = '';
 
-    console.dir(response, {depth: null});
+      // console.log(part);
 
-    if (!response.text) {
-      console.error('no text????');
+      switch (part.state) {
+        case 'reasoning-delta': {
+          if (lastState === 'reasoning-delta') {
+            continue loop;
+          }
+          // text = `-# **Thinking...**\n${part.reasoning!.length > 700 ? '...' : ''}${part.reasoning!
+          //   .slice(-700)
+          //   .split('\n')
+          //   .map(c => (c.trim() ? `-# ${c}` : ''))
+          //   .join('\n')}`;
+          text = '-# thinking...';
+          break;
+        }
+
+        case 'text-delta': {
+          text = `:pencil: ${part.text!.slice(-1_000)}`;
+          break;
+        }
+
+        case 'tool-call': {
+          text = part.tools!.map(t => `:tools: ${t}`).join('\n');
+          break;
+        }
+
+        case 'finish': {
+          text = part.fullText!;
+          final = part;
+          break loop;
+        }
+      }
+
+      lastState = part.state;
+
+      if (!text) {
+        continue;
+      }
+
+      try {
+        if (sent) {
+          sent.edit({content: text});
+        } else {
+          sent = await msg.reply({
+            content: text,
+            flags: MessageFlags.SuppressEmbeds,
+            allowedMentions: {
+              parse: [],
+              repliedUser: false,
+            },
+          });
+        }
+      } catch (err) {
+        console.error('failed to send/edit message:', err);
+      }
     }
 
     const {messages: sentMessages} = await sendMessage({
-      ai,
-      convo,
       channel: msg.channel as TextChannel,
-      response: response.text,
+      response: final.fullText,
       replyTo: msg,
-      usage: response.usage,
+      firstMsg: sent,
+      usage: final.usage as any,
     });
 
     let parentId = msg.id;

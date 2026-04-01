@@ -2,8 +2,43 @@ services:
   searxng:
     image: searxng/searxng
     restart: always
-    ports:
-      - 8080:8080
     volumes:
       - ./docker/searxng/config:/etc/searxng
       - ./docker/searxng/data:/var/cache/searxng
+
+  mira:
+    build: .
+    restart: always
+    volumes:
+      - ./config.toml:/usr/src/app/config.toml:ro
+      - ./knowledge:/usr/src/app/knowledge:ro
+      - db:/usr/src/app/db
+    depends_on:
+      searxng:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
+    develop:
+      watch:
+        - path: ./src
+          action: rebuild
+
+  migrate:
+    build:
+      dockerfile: ./docker/migrate/Dockerfile
+      context: .
+    command: up
+    environment:
+      DATABASE_URL: sqlite:/db/mira.sqlite3
+    volumes:
+      - db:/db
+    develop:
+      watch:
+        - path: ./db/migrations
+          target: /db/migrations
+          action: sync+exec
+          exec:
+            command: up
+
+volumes:
+  db:

@@ -6,6 +6,8 @@
 config.toml
 /docker
 *.sqlite
+*.db
+*.sqlite3
 knowledge.toml
 /src/test.ts
 *.toml

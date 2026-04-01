@@ -38,12 +38,6 @@ export class AIService {
     this.openrouter = createOpenRouter({
       apiKey: config.provider.api_key,
       extraBody: {
-        provider: config.model.provider?.length
-          ? {
-              order: config.model.provider,
-              allow_fallbacks: false,
-            }
-          : undefined,
         reasoning: {
           max_tokens: 1_000,
         },
@@ -136,6 +130,16 @@ export class AIService {
 
     const llmResult = streamText({
       model: (this.isLocal ? this.ollama : this.openrouter)(modelName),
+      providerOptions: {
+        openrouter: {
+          provider: config.model.provider?.length
+            ? {
+                order: config.model.provider,
+                allow_fallbacks: false,
+              }
+            : undefined,
+        },
+      },
       system: systemPrompt,
       messages: [contextPrompt, ...convo],
       maxOutputTokens: config.model.max_output,

@@ -48,7 +48,7 @@ enabled_guilds = []
 
 [sqlite]
 # the path to the sqlite database
-path = ""
+path = "./db/mira.sqlite3"
 
 [provider]
 # openrouter-compatible API url.

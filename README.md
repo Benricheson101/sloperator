@@ -1,4 +1,4 @@
-# Mira - LLM Chatbot
+<h1 align="center">Mira - LLM Chatbot</h1>
 
 Another Discord-based LLM chatbot.
 

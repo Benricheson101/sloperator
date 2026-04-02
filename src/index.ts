@@ -108,12 +108,12 @@ discord.on('messageCreate', async msg => {
         }
 
         case 'text-delta': {
-          text = `:pencil: ${part.text!.slice(-1_000)}`;
+          text = `:pencil: ${part.text!.slice(-1_800)}`;
           break;
         }
 
         case 'tool-call': {
-          text = part.tools!.map(t => `:tools: ${t}`).join('\n');
+          text = part.tools!.map(t => `-# :tools: ${t}`).join('\n');
           break;
         }
 

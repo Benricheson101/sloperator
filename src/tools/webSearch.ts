@@ -26,6 +26,8 @@ export const webSearch = tool({
   },
 });
 
+const PAGE_CONTENT_CACHE = new Map<string, string>();
+
 export const getPageContents = tool({
   description:
     'Get the full content of a website. ONLY use this tool if the snippets from your web_search tool did not provide enough information to answer the user fully or the user asks for information about a specific website. Do not use this on video, audio, or Reddit links.',
@@ -34,6 +36,11 @@ export const getPageContents = tool({
   }),
 
   async execute({url}) {
+    // TODO: clear this out so it doesn't hog ram too badly
+    if (PAGE_CONTENT_CACHE.has(url)) {
+      return PAGE_CONTENT_CACHE.get(url);
+    }
+
     const res = await fetch(
       `https://r.jina.ai/${encodeURIComponent(url.trim())}`,
       {
@@ -44,7 +51,7 @@ export const getPageContents = tool({
           'x-remove-selector': 'header, .class, #id',
           'x-retain-images': 'none',
           'x-timeout': '15',
-          'x-token-budget': '8000',
+          'x-token-budget': '10000',
         },
       }
     );
@@ -61,6 +68,8 @@ export const getPageContents = tool({
     if (text.length >= MAX_LENGTH) {
       text = `${text.slice(0, MAX_LENGTH)}\n\n[content truncated for length]`;
     }
+
+    PAGE_CONTENT_CACHE.set(url, text);
 
     return text;
   },

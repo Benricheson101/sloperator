@@ -248,6 +248,11 @@ export class AIService {
               break;
             }
 
+            case 'get_page_contents': {
+              tools.push(`reading <${(part.input as any).url as string}>`);
+              break;
+            }
+
             default: {
               tools.push(`\`${part.toolName}\``);
             }

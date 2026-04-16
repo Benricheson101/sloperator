@@ -11,3 +11,4 @@ config.toml
 knowledge.toml
 /src/test.ts
 *.toml
+!/whisper/pyproject.toml

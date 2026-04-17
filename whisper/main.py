@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 MAX_FILE_SIZE = 5e7  # 50mb
-IDLE_TIMEOUT = 4 * 60  # 4 minutes
+IDLE_TIMEOUT = 3 * 60  # 3 minutes
 
 WHISPER_MODEL = "large-v3-turbo"
 MODEL_DIR = "/models"
@@ -42,7 +42,7 @@ class TranscriptionResponse(BaseModel):
 def main(audio_url: str):
     import requests
 
-    response = requests.get(audio_url)
+    response = requests.get(audio_url, timeout=5)
     result = Transcriber().transcribe.remote(response.content)
     print(result)
 
@@ -105,7 +105,7 @@ class Transcriber:
                 status_code=401,
             )
 
-        res = requests.head(body.url)
+        res = requests.head(body.url, timeout=5)
         content_length = int(res.headers.get("content-length", "0"))
         content_type = res.headers.get("content-type", "")
 
@@ -116,7 +116,7 @@ class Transcriber:
         ):
             raise HTTPException(status_code=400)
 
-        res = requests.get(body.url)
+        res = requests.get(body.url, timeout=5)
         return self.transcribe.local(res.content)
 
     @method()

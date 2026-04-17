@@ -1,4 +1,4 @@
-import {readdirSync, readFileSync} from 'node:fs';
+import {readdirSync, readFileSync, unwatchFile} from 'node:fs';
 import path from 'node:path';
 
 import {parse} from 'toml';
@@ -27,9 +27,12 @@ const main = async () => {
   const files = readdirSync('./knowledge', {withFileTypes: true});
   const tomlFiles = files.filter(f => f.isFile() && f.name.endsWith('.toml'));
 
+  const config = loadConfig('./config.toml');
+  const ai = new AIService();
+  const db = new Database(config.sqlite.path);
+
   for (const file of tomlFiles) {
     const knowledgeFile = loadKnowledge(path.join(file.parentPath, file.name));
-    const config = loadConfig('./config.toml');
 
     const id =
       /^(\d+)\.toml/.exec(file.name)?.[1] ||
@@ -44,9 +47,6 @@ const main = async () => {
     }
 
     const discordGuildID = BigInt(id);
-
-    const ai = new AIService();
-    const db = new Database(config.sqlite.path);
 
     db.db
       .prepare(
@@ -75,6 +75,9 @@ const main = async () => {
       );
     }
   }
+
+  db.db.close();
+  unwatchFile('./config.toml');
 };
 
 main().catch(console.error);

@@ -15,17 +15,17 @@
   "packageManager": "pnpm@10.30.3",
   "devDependencies": {
     "@benricheson101/util": "^1.5.5",
-    "@biomejs/biome": "^2.4.5",
+    "@biomejs/biome": "^2.4.10",
     "@types/json-schema": "^7.0.15",
-    "@types/node": "^25.3.3",
+    "@types/node": "^25.5.2",
     "typescript": "^5.9.3"
   },
   "dependencies": {
     "@openrouter/ai-sdk-provider": "^2.3.3",
-    "ai": "^6.0.106",
-    "ai-sdk-ollama": "^3.8.0",
-    "discord.js": "^14.25.1",
-    "sqlite-vec": "^0.1.7",
+    "ai": "^6.0.146",
+    "ai-sdk-ollama": "^3.8.2",
+    "discord.js": "^14.26.2",
+    "sqlite-vec": "^0.1.9",
     "toml": "^3.0.0",
     "zod": "^4.3.6"
   }

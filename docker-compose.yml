@@ -2,6 +2,8 @@ services:
   searxng:
     image: searxng/searxng
     restart: always
+    ports:
+      - 8080:8080
     volumes:
       - ./docker/searxng/config:/etc/searxng
       - ./docker/searxng/data:/var/cache/searxng
@@ -29,16 +31,16 @@ services:
       context: .
     command: up
     environment:
-      DATABASE_URL: sqlite:/db/mira.sqlite3
+      DATABASE_URL: sqlite:/mira/mira.sqlite3
     volumes:
-      - db:/db
+      - db:/mira
     develop:
       watch:
         - path: ./db/migrations
           target: /db/migrations
           action: sync+exec
           exec:
-            command: up
+            command: up -v
 
 volumes:
   db:

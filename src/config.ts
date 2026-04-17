@@ -1,5 +1,5 @@
 import assert from 'node:assert';
-import {readFileSync} from 'node:fs';
+import {readFileSync, type StatWatcher, watchFile} from 'node:fs';
 
 import {parse} from 'toml';
 
@@ -52,8 +52,16 @@ export type Config = {
 };
 
 export let config: Config;
+export let watcher: StatWatcher | undefined;
 
 export const loadConfig = (path = 'config.toml') => {
+  if (!watcher) {
+    watcher = watchFile(path, () => {
+      console.log('Config file changed, reloading...');
+      loadConfig(path);
+    });
+  }
+
   const configFile = readFileSync(path, 'utf8');
   config = parse(configFile);
 

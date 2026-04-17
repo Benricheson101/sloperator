@@ -48,7 +48,7 @@ export const getPageContents = tool({
           authorization: config.web_search.jina_api_key
             ? `Bearer ${config.web_search.jina_api_key}`
             : '',
-          'x-remove-selector': 'header, .class, #id',
+          'x-remove-selector': 'header, footer',
           'x-retain-images': 'none',
           'x-timeout': '15',
           'x-token-budget': '10000',

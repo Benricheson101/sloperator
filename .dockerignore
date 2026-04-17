@@ -3,6 +3,7 @@
 !/scripts
 !/knowledge
 !/db
+!/db/migrate
 !/package.json
 !/pnpm-lock.yaml
 !/pnpm-workspace.yaml

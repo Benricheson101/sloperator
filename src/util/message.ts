@@ -179,6 +179,7 @@ export const sendMessage = async ({
     total: number;
     cost: number;
     provider: string;
+    steps: number;
   };
 }): Promise<SendMessageResult> => {
   const {blocks, prose} = parseCodeBlocks(response, CODE_FILE_THRESHOLD);
@@ -209,7 +210,7 @@ export const sendMessage = async ({
     const msgContent =
       messagesToSend[i] +
       (isLast && config.misc.debug_show_tokens
-        ? `\n\n-# input: ${usage.in} tokens (${usage.in - usage.cached} uncached, ${usage.cached} cached), output: ${usage.out}. cost: $${usage.cost}. provider: ${usage.provider}`
+        ? `\n\n-# input: ${usage.in} tokens (${usage.in - usage.cached} uncached, ${usage.cached} cached), output: ${usage.out}. cost: $${usage.cost}. steps; ${usage.steps}. provider: ${usage.provider}`
         : '');
 
     const msgOptions: MessageCreateOptions = {

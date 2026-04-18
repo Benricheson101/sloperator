@@ -358,6 +358,7 @@ export class AIService {
 
   async routePrompt(messages: DBMessage[]) {
     if (
+      !config.model.enable_routing ||
       !config.model.small_model ||
       !config.model.router_model ||
       config.model.primary_model === config.model.small_model

@@ -14,8 +14,16 @@ CREATE TABLE server_knowledge (
   discord_guild_id integer not null,
   category text not null
 );
+CREATE TABLE transcriptions (
+  id integer primary key,
+  text text not null,
+  discord_author_id integer not null,
+  voice_message_id integer not null,
+  transcription_message_id integer not null
+);
 -- Dbmate schema migrations
 INSERT INTO "schema_migrations" (version) VALUES
   ('20260323154300'),
   ('20260323214639'),
-  ('20260326215409');
+  ('20260326215409'),
+  ('20260417015937');

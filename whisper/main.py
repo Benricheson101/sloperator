@@ -133,7 +133,7 @@ class Transcriber:
         segments, info = self.model.transcribe(
             audio_data,
             vad_filter=True,
-            initial_prompt="We use all the standard punctuation and capitalization rules of the English language. Sentences start with a capital letter, and end with a full stop. Of course, where appropriate, commas are included. The pronoun \"I\" should be capitalized!",
+            initial_prompt='We use all the standard punctuation and capitalization rules of the English language. Sentences start with a capital letter, and end with a full stop. Of course, where appropriate, commas are included. The pronoun "I" should be capitalized!',
         )
 
         return TranscriptionResponse(

@@ -11,6 +11,7 @@ export type ModelConfig = {
   provider?: string[];
   max_history?: number;
   max_output?: number;
+  enable_routing: boolean;
 };
 
 export type ProviderConfig = {
@@ -93,6 +94,10 @@ export const loadConfig = (path = 'config.toml', watch = true) => {
 
   if (config.misc?.debug_show_tokens === undefined) {
     config.misc = {debug_show_tokens: false};
+  }
+
+  if (config.model.enable_routing === undefined) {
+    config.model.enable_routing = !!config.model.router_model;
   }
 
   return config;

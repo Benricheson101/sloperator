@@ -130,7 +130,11 @@ class Transcriber:
         import librosa
 
         audio_data, _ = librosa.load(io.BytesIO(audio_bytes), sr=16000)
-        segments, info = self.model.transcribe(audio_data)
+        segments, info = self.model.transcribe(
+            audio_data,
+            vad_filter=True,
+            initial_prompt="We use all the standard punctuation and capitalization rules of the English language. Sentences start with a capital letter, and end with a full stop. Of course, where appropriate, commas are included. The pronoun \"I\" should be capitalized!",
+        )
 
         return TranscriptionResponse(
             text="".join(map(lambda s: s.text, segments)).strip(),

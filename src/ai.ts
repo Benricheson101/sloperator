@@ -266,6 +266,11 @@ export class AIService {
               break;
             }
 
+            case 'evaluate_math_expr': {
+              tools.push(`evaluating \`${(part.input as any).expr as string}\``);
+              break;
+            }
+
             default: {
               tools.push(`\`${part.toolName}\``);
             }

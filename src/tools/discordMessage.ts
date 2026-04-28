@@ -9,10 +9,10 @@ export const discordMessageTools = (member: GuildMember) => ({
       channelID: z
         .string()
         .describe('The ID of the Discord channel the message is in'),
-      messsageID: z.string().describe('The ID of the Discord message to read'),
+      messageID: z.string().describe('The ID of the Discord message to read'),
     }),
 
-    async execute({channelID, messsageID: messageID}) {
+    async execute({channelID, messageID}) {
       const ch = member.guild.channels.cache.get(channelID);
 
       if (!ch) {

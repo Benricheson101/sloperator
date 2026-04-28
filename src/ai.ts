@@ -15,6 +15,7 @@ import type {GuildMember} from 'discord.js';
 import {config} from './config';
 import type {Database, DBMessage} from './db';
 import {discordMessageTools} from './tools/discordMessage';
+import {evalMathExpr} from './tools/math';
 import {ragTools} from './tools/rag';
 import {currentTime} from './tools/time';
 import {getPageContents, webSearch} from './tools/webSearch';
@@ -25,6 +26,7 @@ const TOOLS = {
   search_web: webSearch,
   get_page_contents: getPageContents,
   get_current_time: currentTime,
+  evaluate_math_expr: evalMathExpr,
 };
 
 export class AIService {

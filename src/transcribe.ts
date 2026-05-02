@@ -72,7 +72,7 @@ const transcribeOpenRouter = async (url: string, contentType?: string) => {
     },
   });
 
-  const footer = `\n\n-# input: ${t.usage?.inputTokens || '??'}, output: ${t.usage?.outputTokens || '??'}. cost: $${t.usage?.cost || '??'}`;
+  const footer = `\n\n-# length: ${t.usage?.seconds ?? 0}s. cost: $${t.usage?.cost ?? '??'}`;
 
   return {
     // lang: transcription.language || 'en',

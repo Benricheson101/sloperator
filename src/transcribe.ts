@@ -54,7 +54,7 @@ const transcribeOpenRouter = async (url: string, contentType?: string) => {
     apiKey: config.provider.api_key,
   });
 
-  const transcription = await or.stt.createTranscription({
+  const t = await or.stt.createTranscription({
     sttRequest: {
       model: 'openai/whisper-large-v3-turbo',
       inputAudio: {
@@ -72,9 +72,11 @@ const transcribeOpenRouter = async (url: string, contentType?: string) => {
     },
   });
 
+  const footer = `\n\n-# input: ${t.usage?.inputTokens || '??'}, output: ${t.usage?.outputTokens || '??'}. cost: $${t.usage?.cost || '??'}`;
+
   return {
     // lang: transcription.language || 'en',
     lang: 'en',
-    text: transcription.text,
+    text: config.misc.debug_show_tokens ? t.text + footer : t.text,
   };
 };

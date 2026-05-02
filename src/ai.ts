@@ -1,3 +1,5 @@
+// import {OpenRouter} from '@openrouter/agent'
+
 import {createOpenRouter} from '@openrouter/ai-sdk-provider';
 import {
   embed,
@@ -267,7 +269,9 @@ export class AIService {
             }
 
             case 'evaluate_math_expr': {
-              tools.push(`evaluating \`${(part.input as any).expr as string}\``);
+              tools.push(
+                `evaluating \`${(part.input as any).expr as string}\``
+              );
               break;
             }
 
@@ -313,33 +317,6 @@ export class AIService {
       usage,
     };
   }
-
-  // async generateTitle(messages: ModelMessage[]): Promise<string> {
-  //   const modelName = config.model.small_model || config.model.name;
-  //
-  //   const titlePrompt = `Generate a short, descriptive title for this conversation. Max 100 characters.`;
-  //
-  //   try {
-  //     const result = await generateText({
-  //       model: (this.isLocal ? this.ollama : this.openrouter)(modelName, {}),
-  //       system: titlePrompt,
-  //       messages: messages.slice(-10),
-  //       maxOutputTokens: 20,
-  //       providerOptions: {
-  //         openrouter: {
-  //           reasoning: {
-  //             enabled: false,
-  //           },
-  //         },
-  //       },
-  //     });
-  //
-  //     return result.text.slice(0, 100).trim() || 'AI Response';
-  //   } catch (err) {
-  //     console.error('Failed to generate thread title:', err);
-  //     return 'AI Response';
-  //   }
-  // }
 
   async getEmbedding(query: string): Promise<number[]> {
     const {embedding} = await embed({

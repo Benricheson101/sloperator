@@ -25,8 +25,8 @@ const db = new Database(config.sqlite.path);
 let BOT_PING_REGEX: RegExp;
 
 discord.on('clientReady', () => {
-  console.log(`Logged in as ${discord.user?.tag}`);
   BOT_PING_REGEX = new RegExp(`<@!?${discord.user!.id}>`, 'g');
+  console.log(`Logged in as ${discord.user?.tag}`);
 });
 
 discord.on('messageCreate', async msg => {
@@ -47,6 +47,8 @@ discord.on('messageCreate', async msg => {
       if (!msg.flags.has(MessageFlags.IsVoiceMessage)) {
         return;
       }
+
+      msg.attachments.first()!.contentType;
 
       const [reply, transcribed] = await Promise.allSettled([
         msg.reply({
@@ -76,13 +78,15 @@ discord.on('messageCreate', async msg => {
         return;
       }
 
-      reply.value.edit({
-        content: transcribed.value.text,
-        allowedMentions: {
-          parse: [],
-          repliedUser: false,
-        },
-      });
+      reply.value
+        .edit({
+          content: transcribed.value.text,
+          allowedMentions: {
+            parse: [],
+            repliedUser: false,
+          },
+        })
+        .catch(() => console.error('failed to edit message'));
 
       // TODO: insert this without text then update it?
       db.insertTranscription(

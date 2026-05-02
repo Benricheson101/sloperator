@@ -43,6 +43,7 @@ export type MiscConfig = {
 };
 
 export type TranscriptionConfig = {
+  use_modal: boolean;
   endpoint: string;
   api_key: string;
 };
@@ -99,6 +100,21 @@ export const loadConfig = (path = 'config.toml', watch = true) => {
   if (config.model.enable_routing === undefined) {
     config.model.enable_routing = !!config.model.router_model;
   }
+
+  if (config.transcription.use_modal === undefined) {
+    config.transcription.use_modal = !!config.transcription.endpoint;
+  }
+
+  console.log('Loaded config:');
+  console.log('  => primary model:   ', config.model.primary_model);
+  console.log('  => multimodal model:', config.model.multimodal_model);
+  console.log('  => small model:     ', config.model.small_model);
+  console.log('  => router model:    ', config.model.router_model);
+  console.log('  => enable routing:  ', config.model.enable_routing);
+  console.log(
+    '  => transcription:   ',
+    config.transcription.use_modal ? 'modal' : 'openrouter'
+  );
 
   return config;
 };
